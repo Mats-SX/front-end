@@ -16,6 +16,7 @@
 package org.opencypher.v9_0.ast
 
 import org.opencypher.v9_0.ast.semantics.{SemanticAnalysisTooling, SemanticCheck, SemanticState}
+import org.opencypher.v9_0.expressions.Parameter
 import org.opencypher.v9_0.util.InputPosition
 
 
@@ -54,17 +55,18 @@ final case class DropGraph(graphName: CatalogName)(val position: InputPosition) 
 }
 
 object CreateView {
-  def apply(graphName: CatalogName, query: Query)(position: InputPosition): CreateView =
-    CreateView(graphName, query.part)(position)
+  def apply(graphName: CatalogName, params: Seq[Parameter], query: Query)(position: InputPosition): CreateView =
+    CreateView(graphName, params, query.part)(position)
 }
 
-final case class CreateView(graphName: CatalogName, query: QueryPart)
+final case class CreateView(graphName: CatalogName, params: Seq[Parameter], query: QueryPart)
   (val position: InputPosition) extends CatalogDDL {
 
   override def name = "CATALOG CREATE VIEW/QUERY"
 
   override def semanticCheck: SemanticCheck =
     super.semanticCheck chain
+  // TODO: Record parameters in the semantic state here and check them in the GraphByParameter semanticCheck
       SemanticState.recordCurrentScope(this) chain
       query.semanticCheck
 }

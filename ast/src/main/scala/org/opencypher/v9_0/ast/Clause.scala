@@ -78,8 +78,25 @@ trait FromGraph extends MultipleGraphClause {
 
   override def name = "FROM GRAPH"
 
-  def graphName: CatalogName
+}
 
+final case class GraphByParameter(parameter: Parameter)(val position: InputPosition) extends FromGraph {
+
+  override def semanticCheck: SemanticCheck =
+    super.semanticCheck chain foo chain SemanticState.recordCurrentScope(this)
+
+  private def foo: SemanticCheck = { s: SemanticState =>
+
+    val inCreateView = s.recordedScopes.keySet.exists {
+      case _: CreateView => true
+      case _ => false
+    }
+
+    if (!inCreateView)
+      SemanticError(s"Resolving graphs via parameter is only possible inside (parameterised) views${self.name}", rel.position)
+
+    ???
+  }
 }
 
 final case class GraphLookup(graphName: CatalogName)(val position: InputPosition) extends FromGraph {
